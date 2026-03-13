@@ -1,287 +1,912 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nox</title>
-  <meta name="theme-color" content="#120000" />
-  <meta name="description" content="Nox – Links & social presence" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.8.1/dist/vanilla-tilt.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Punjab & India — Interactive Atlas</title>
 
-  <style>
-    :root {
-      --card-width: 380px;
-      --glass-bg: rgba(255,255,255,0.04);
-      --glass-border: rgba(255,255,255,0.08);
-      --muted: rgba(255,255,255,0.72);
-      --ig: #E1306C;
-      --yt: #FF0000;
-      --x: #FFFFFF;
-      --parallax-x: 0px;
-      --parallax-y: 0px;
-    }
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<!-- Leaflet JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; overflow: hidden; }
-    body {
-      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background: #0b0000;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-    }
+<style>
+  :root {
+    --ink: #111827;
+    --gold: #b8860b;
+    --gold-light: #d4a017;
+    --surface: #f8f7f4;
+    --border: #e2ddd6;
+    --accent: #2563eb;
+    --punjab-fill: rgba(37,99,235,0.10);
+    --punjab-border: #2563eb;
+    --india-fill: rgba(16,185,129,0.08);
+    --india-border: #059669;
+  }
 
-    #tsparticles { position: fixed; inset: 0; z-index: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    .nebula {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      background: radial-gradient(700px 400px at 10% 20%, rgba(110,0,0,.55), transparent 15%),
-                  radial-gradient(600px 350px at 90% 80%, rgba(45,0,0,.55), transparent 12%),
-                  linear-gradient(180deg, #080000, #0c0000 40%, #050000);
-    }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+  }
 
-    .nebula::before, .nebula::after {
-      content: "";
-      position: absolute;
-      inset: -20%;
-      filter: blur(70px) opacity(.9);
-      animation: floaty 30s linear infinite;
-    }
+  /* HEADER */
+  header {
+    background: var(--ink);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 2000;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--gold-light);
+  }
+  .header-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #f9f7f2;
+    letter-spacing: 0.3px;
+  }
+  .header-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 8px 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(249,247,242,0.5);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover {
+    color: rgba(249,247,242,0.85);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .tab-btn.active {
+    background: rgba(184,134,11,0.15);
+    border-color: var(--gold);
+    color: var(--gold-light);
+  }
 
-    .nebula::before {
-      background: radial-gradient(closest-side, rgba(255,60,60,.25), transparent 35%);
-      transform: translate(var(--parallax-x), var(--parallax-y));
-    }
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    height: calc(100vh - 64px);
+  }
 
-    .nebula::after {
-      background: radial-gradient(closest-side, rgba(200,10,40,.18), transparent 30%);
-      animation-direction: reverse;
-      transform: translate(calc(var(--parallax-x) * -0.7), calc(var(--parallax-y) * -0.7));
-    }
+  /* SIDEBAR */
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: white;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-    @keyframes floaty {
-      0% { transform: translate(-10%, 0); }
-      50% { transform: translate(10%, 4%); }
-      100% { transform: translate(-10%, 0); }
-    }
+  .sidebar-inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 20px;
+  }
+  .sidebar-inner::-webkit-scrollbar { width: 4px; }
+  .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px) scale(0.96); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
+  .panel { display: none; }
+  .panel.active { display: block; }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
+  .panel-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .panel-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 20px;
+  }
 
-    @keyframes pulse {
-      0%   { box-shadow: 0 0 0 0 rgba(255,60,60,0.4); }
-      70%  { box-shadow: 0 0 0 12px rgba(255,60,60,0); }
-      100% { box-shadow: 0 0 0 0 rgba(255,60,60,0); }
-    }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
 
-    @keyframes breathe {
-      0%, 100% { transform: scale(1); }
-      50%      { transform: scale(1.04); }
-    }
+  /* INFO CARD */
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .info-card-title {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #9ca3af;
+    margin-bottom: 10px;
+  }
 
-    .grain {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><filter id="n"><feTurbulence baseFrequency="0.9"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.04"/></svg>');
-    }
+  /* LEGEND */
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #374151;
+  }
+  .legend-swatch {
+    width: 20px; height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
 
-    .wrap {
-      z-index: 2;
-      width: 100%;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-    }
+  /* STAT ROWS */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: #6b7280; }
+  .stat-val { font-weight: 500; color: var(--ink); font-size: 12px; font-family: 'DM Mono', monospace; }
+  .stat-val.highlight { color: #c0392b; font-weight: 700; }
 
-    .card {
-      width: min(92%, var(--card-width));
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      padding: 28px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 30px rgba(0,0,0,.7);
-      text-align: center;
-      position: relative;
-      opacity: 0;
-      animation: fadeInUp 1.2s ease-out 0.3s forwards;
-    }
+  /* HOVER INFO BOX */
+  .hover-box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    min-height: 90px;
+    transition: all 0.2s;
+  }
+  .hover-box-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .hover-box-detail {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.6;
+  }
+  .hover-hint {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+    padding: 8px 0;
+  }
 
-    .card .tab {
-      position: absolute;
-      top: -14px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 110px;
-      height: 6px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.06);
-      backdrop-filter: blur(4px);
-    }
+  /* RIVER LEGEND LINE */
+  .river-line {
+    width: 28px; height: 3px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
 
-    .avatar {
-      width: 96px;
-      height: 96px;
-      margin: 6px auto 12px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid rgba(255,255,255,.06);
-      animation: pulse 4s infinite cubic-bezier(0.4, 0, 0.6, 1), breathe 8s infinite ease-in-out;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,60,60,0.15);
-      transition: box-shadow 0.3s, transform 0.3s;
-    }
+  /* MAP AREA */
+  .map-area {
+    flex: 1;
+    position: relative;
+  }
 
-    .avatar:hover {
-      box-shadow: 0 0 25px rgba(255,60,60,0.6);
-      transform: scale(1.05);
-    }
+  .map-view { display: none; width: 100%; height: 100%; }
+  .map-view.active { display: block; }
 
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  #map-punjab, #map-india {
+    width: 100%;
+    height: 100%;
+  }
 
-    h1 {
-      font-size: 1.9rem;
-      margin: 6px 0;
-      opacity: 0;
-      animation: fadeIn 1s ease-out 0.8s forwards;
-    }
+  /* Leaflet override for clean look */
+  .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12) !important;
+  }
+  .leaflet-control-zoom a {
+    border-radius: 4px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--border) !important;
+  }
+  .leaflet-control-attribution {
+    font-family: 'DM Mono', monospace !important;
+    font-size: 9px !important;
+  }
 
-    .subtitle {
-      color: rgba(255,255,255,.75);
-      margin-bottom: 18px;
-      opacity: 0;
-      animation: fadeIn 1s ease-out 1s forwards;
-    }
+  /* CUSTOM TOOLTIP */
+  .leaflet-tooltip {
+    background: var(--ink) !important;
+    color: #f9f7f2 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
+  }
+  .leaflet-tooltip::before { display: none !important; }
 
-    .links {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-top: 10px;
-    }
+  .leaflet-popup-content-wrapper {
+    border-radius: 8px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15) !important;
+    border: 1px solid var(--border) !important;
+    font-family: 'DM Sans', sans-serif !important;
+  }
+  .leaflet-popup-tip { display: none !important; }
+  .leaflet-popup-content { margin: 0 !important; }
 
-    .btn {
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 14px;
-      text-decoration: none;
-      font-weight: 700;
-      color: #fff;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.06);
-      backdrop-filter: blur(8px);
-      transition: all .3s ease;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: fadeIn 0.8s ease-out forwards;
-    }
+  .popup-inner {
+    padding: 16px 18px;
+    min-width: 200px;
+  }
+  .popup-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .popup-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    font-size: 12px;
+    padding: 3px 0;
+    color: #374151;
+  }
+  .popup-row span:last-child {
+    font-weight: 500;
+    color: var(--ink);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
 
-    .btn:nth-child(1) { animation-delay: 1.2s; }
-    .btn:nth-child(2) { animation-delay: 1.35s; }
-    .btn:nth-child(3) { animation-delay: 1.5s; }
+  /* LOADING OVERLAY */
+  .loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 1000;
+    transition: opacity 0.4s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loader {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold-light);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #9ca3af;
+    text-transform: uppercase;
+  }
 
-    .btn i { font-size: 1.35rem; }
-
-    .btn:hover {
-      transform: translateY(-4px) scale(1.03);
-      background: rgba(255,255,255,.09);
-    }
-
-    .btn.ig:hover { background: rgba(225,48,108,.15); box-shadow: 0 0 30px rgba(225,48,108,.35); }
-    .btn.x:hover  { background: rgba(255,255,255,.12); box-shadow: 0 0 30px rgba(255,255,255,.3); }
-    .btn.gh:hover { background: rgba(255,255,255,.12); box-shadow: 0 0 30px rgba(255,255,255,.3); }
-
-    .footer {
-      margin-top: 24px;
-      font-size: .78rem;
-      color: rgba(255,255,255,.55);
-      opacity: 0;
-      animation: fadeIn 1s ease-out 1.8s forwards;
-    }
-  </style>
+  @media (max-width: 700px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+    header { padding: 0 16px; }
+    .header-title { font-size: 14px; }
+  }
+</style>
 </head>
 <body>
 
-  <div id="tsparticles"></div>
-  <div class="nebula"></div>
-  <div class="grain"></div>
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="header-dot"></div>
+    <span class="header-title">Punjab & India — Geographic Atlas</span>
+  </div>
+  <div class="header-nav">
+    <button class="tab-btn active" onclick="switchTab('punjab')">Punjab</button>
+    <button class="tab-btn" onclick="switchTab('india')">India Rainfall</button>
+  </div>
+</header>
 
-  <div class="wrap">
-    <div class="card" data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.3">
-      <div class="tab"></div>
-      <div class="avatar">
-        <img src="desktop-wallpaper-untitled-red-and-black-dark-red-black-aesthetic-black-and-red-phone.jpg" alt="Nox profile picture">
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-inner">
+
+      <!-- PUNJAB PANEL -->
+      <div class="panel active" id="panel-punjab">
+        <div class="panel-title">Punjab</div>
+        <div class="panel-sub">State of India · 22 Districts</div>
+
+        <div class="hover-box" id="hover-punjab">
+          <div class="hover-hint">👆 Click or hover on any district for details</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Top Districts by Population</div>
+          <div class="stat-row"><span class="stat-label">① Ludhiana</span><span class="stat-val highlight">34.99 lakh</span></div>
+          <div class="stat-row"><span class="stat-label">② Amritsar</span><span class="stat-val">24.91 lakh</span></div>
+          <div class="stat-row"><span class="stat-label">③ Jalandhar</span><span class="stat-val">21.94 lakh</span></div>
+          <div class="stat-row"><span class="stat-label">④ Patiala</span><span class="stat-val">18.96 lakh</span></div>
+          <div class="stat-row"><span class="stat-label">⑤ Sangrur</span><span class="stat-val">16.55 lakh</span></div>
+          <div class="stat-row"><span class="stat-label">Least: Barnala</span><span class="stat-val">5.96 lakh</span></div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Major Rivers</div>
+          <div class="legend-row"><div class="river-line" style="background:#1d4ed8;height:4px"></div><div><strong>Sutlej</strong> — Longest; flows SW. Joins Pakistan border.</div></div>
+          <div class="legend-row"><div class="river-line" style="background:#2563eb;height:3px"></div><div><strong>Beas</strong> — Central Punjab. Joins Sutlej at Harike.</div></div>
+          <div class="legend-row"><div class="river-line" style="background:#60a5fa;height:2.5px"></div><div><strong>Ravi</strong> — NW border river. Enters Pakistan near Amritsar.</div></div>
+          <p style="font-size:11px;color:#9ca3af;margin-top:10px">Punjab = "Land of Five Rivers" (Panj+Aab). Jhelum & Chenab now in Pakistan.</p>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Cultural Regions</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(220,38,38,0.2);border-color:rgba(220,38,38,0.4)"></div><strong>Majha</strong> — N. Amritsar, Gurdaspur. Heart of Sikh heritage.</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(234,179,8,0.2);border-color:rgba(234,179,8,0.4)"></div><strong>Doaba</strong> — E. Between Beas & Sutlej. Jalandhar belt.</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:rgba(37,99,235,0.15);border-color:rgba(37,99,235,0.3)"></div><strong>Malwa</strong> — S. Ludhiana, Patiala, Bathinda. Largest region.</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Quick Facts</div>
+          <div class="stat-row"><span class="stat-label">Capital</span><span class="stat-val">Chandigarh</span></div>
+          <div class="stat-row"><span class="stat-label">Largest City</span><span class="stat-val">Ludhiana</span></div>
+          <div class="stat-row"><span class="stat-label">Area</span><span class="stat-val">50,362 km²</span></div>
+          <div class="stat-row"><span class="stat-label">Population</span><span class="stat-val">~3.14 Crore</span></div>
+          <div class="stat-row"><span class="stat-label">Density</span><span class="stat-val">551/km²</span></div>
+        </div>
       </div>
-      <h1>Nox</h1>
-      <div class="subtitle">Links & presence</div>
 
-      <nav class="links">
-        <a class="btn ig" href="https://instagram.com/velorinox" target="_blank" rel="noopener noreferrer">
-          <i class="fa-brands fa-instagram"></i> Instagram
-        </a>
-        <a class="btn x" href="https://x.com/velorinox" target="_blank" rel="noopener noreferrer">
-          <i class="fa-brands fa-x-twitter"></i> X
-        </a>
-        <a class="btn gh" href="https://github.com/velorinox" target="_blank" rel="noopener noreferrer">
-          <i class="fa-brands fa-github"></i> GitHub
-        </a>
-      </nav>
+      <!-- INDIA PANEL -->
+      <div class="panel" id="panel-india">
+        <div class="panel-title">India</div>
+        <div class="panel-sub">Rainfall Distribution Map</div>
 
-      <div class="footer">© Nox</div>
+        <div class="hover-box" id="hover-india">
+          <div class="hover-hint">👆 Click or hover on any state for rainfall data</div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Rainfall Legend</div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#1e3a8a"></div><div><strong>Extreme</strong> — 400+ cm (NE + W.Ghats)</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#2563eb"></div><div><strong>Very Heavy</strong> — 200–400 cm</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#60a5fa"></div><div><strong>Heavy</strong> — 100–200 cm</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#bfdbfe"></div><div><strong>Moderate</strong> — 50–100 cm</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#fde68a"></div><div><strong>Low</strong> — 20–50 cm</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#d97706"></div><div><strong>Desert</strong> — &lt;20 cm (Thar/Ladakh)</div></div>
+          <div class="legend-row"><div class="legend-swatch" style="background:#86efac;border-color:#16a34a"></div><div><strong>Punjab</strong> ★ — highlighted</div></div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Highest Rainfall — India</div>
+          <div class="stat-row"><span class="stat-label" style="font-weight:600;color:#1e3a8a">① Mawsynram (Meghalaya)</span><span class="stat-val highlight">11,872 mm/yr</span></div>
+          <div class="stat-row"><span class="stat-label">② Cherrapunji (Meghalaya)</span><span class="stat-val">11,610 mm/yr</span></div>
+          <div class="stat-row"><span class="stat-label">③ Agumbe (Karnataka)</span><span class="stat-val">~7,000 mm</span></div>
+          <div class="stat-row"><span class="stat-label">④ Mahabaleshwar (MH)</span><span class="stat-val">~6,250 mm</span></div>
+          <div class="stat-row"><span class="stat-label">India Average</span><span class="stat-val">~1,180 mm</span></div>
+        </div>
+
+        <div class="info-card">
+          <div class="info-card-title">Why is Meghalaya the Wettest?</div>
+          <p style="font-size:12.5px;color:#374151;line-height:1.7">The Bay of Bengal SW monsoon funnels into the Khasi Hills. The funnel-shaped terrain forces air upward — it cools, condenses, and dumps rain (orographic effect). Mawsynram sits right at the funnel's narrowest point.</p>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <script>
-    tsParticles.load("tsparticles", {
-      background: { color: { value: "transparent" } },
-      fpsLimit: 60,
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: ["#ff3333", "#cc0000", "#990000"] },
-        shape: { type: "circle" },
-        opacity: { value: 0.3, random: true },
-        size: { value: 2, random: { enable: true, minimumValue: 0.5 } },
-        move: { enable: true, speed: 0.5, outModes: { default: "out" } }
-      },
-      detectRetina: true
+  <!-- MAP AREA -->
+  <div class="map-area">
+
+    <!-- Punjab Map -->
+    <div class="map-view active" id="view-punjab">
+      <div class="loading-overlay" id="load-punjab">
+        <div class="loader"></div>
+        <div class="loading-text">Loading Punjab Map…</div>
+      </div>
+      <div id="map-punjab"></div>
+    </div>
+
+    <!-- India Map -->
+    <div class="map-view" id="view-india">
+      <div class="loading-overlay" id="load-india">
+        <div class="loader"></div>
+        <div class="loading-text">Loading India Map…</div>
+      </div>
+      <div id="map-india"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const districtData = {
+  "Ludhiana":       { pop: "34.99 lakh", rank: 1, region: "Malwa", area: "3,767 km²", density: "929/km²" },
+  "Amritsar":       { pop: "24.91 lakh", rank: 2, region: "Majha", area: "5,074 km²", density: "491/km²" },
+  "Jalandhar":      { pop: "21.94 lakh", rank: 3, region: "Doaba", area: "2,632 km²", density: "833/km²" },
+  "Patiala":        { pop: "18.96 lakh", rank: 4, region: "Malwa", area: "3,218 km²", density: "589/km²" },
+  "Sangrur":        { pop: "16.55 lakh", rank: 5, region: "Malwa", area: "3,594 km²", density: "461/km²" },
+  "Gurdaspur":      { pop: "16.22 lakh", rank: 6, region: "Majha", area: "3,553 km²", density: "456/km²" },
+  "Hoshiarpur":     { pop: "15.83 lakh", rank: 7, region: "Doaba", area: "3,365 km²", density: "470/km²" },
+  "Firozpur":       { pop: "20.26 lakh", rank: 8, region: "Malwa", area: "5,545 km²", density: "366/km²" },
+  "Bathinda":       { pop: "14.08 lakh", rank: 9, region: "Malwa", area: "3,385 km²", density: "416/km²" },
+  "Pathankot":      { pop: "6.86 lakh",  rank:10, region: "Majha", area: "1,280 km²", density: "536/km²" },
+  "Rupnagar":       { pop: "6.84 lakh",  rank:11, region: "Doaba", area: "1,371 km²", density: "499/km²" },
+  "Kapurthala":     { pop: "8.17 lakh",  rank:12, region: "Doaba", area: "1,632 km²", density: "500/km²" },
+  "Fatehgarh Sahib":{ pop: "6.00 lakh",  rank:13, region: "Malwa", area: "1,180 km²", density: "508/km²" },
+  "Moga":           { pop: "9.95 lakh",  rank:14, region: "Malwa", area: "2,238 km²", density: "445/km²" },
+  "Faridkot":       { pop: "6.18 lakh",  rank:15, region: "Malwa", area: "1,469 km²", density: "421/km²" },
+  "Muktsar":        { pop: "9.17 lakh",  rank:16, region: "Malwa", area: "2,617 km²", density: "350/km²" },
+  "Barnala":        { pop: "5.96 lakh",  rank:17, region: "Malwa", area: "1,430 km²", density: "417/km²" },
+  "Tarn Taran":     { pop: "11.20 lakh", rank:18, region: "Majha", area: "2,449 km²", density: "457/km²" },
+  "Nawanshahr":     { pop: "6.14 lakh",  rank:19, region: "Doaba", area: "1,268 km²", density: "484/km²" },
+  "Fazilka":        { pop: "10.50 lakh", rank:20, region: "Malwa", area: "3,116 km²", density: "337/km²" },
+  "Mohali":         { pop: "9.94 lakh",  rank:21, region: "Malwa", area: "1,093 km²", density: "910/km²" },
+  "Malerkotla":     { pop: "4.52 lakh",  rank:22, region: "Malwa", area: "668 km²",   density: "677/km²" },
+};
+
+const regionColors = {
+  "Majha": { fill: "rgba(220,38,38,0.13)", border: "#dc2626" },
+  "Doaba": { fill: "rgba(234,179,8,0.15)",  border: "#ca8a04" },
+  "Malwa": { fill: "rgba(37,99,235,0.10)",  border: "#2563eb" },
+};
+
+const rainfallData = {
+  "Jammu and Kashmir": { mm: "600–1200", zone: "Low–Moderate", color: "#fde68a", note: "J&K moderate; Ladakh <100mm (rain shadow)" },
+  "Himachal Pradesh":  { mm: "1000–2000", zone: "Moderate", color: "#bfdbfe", note: "Higher elevations receive snowfall" },
+  "Punjab":            { mm: "500–900", zone: "Low–Moderate", color: "#86efac", border:"#16a34a", note: "Semi-arid NW zone; irrigation dependent" },
+  "Haryana":           { mm: "400–800", zone: "Low", color: "#fde68a", note: "Semi-arid; dependent on Yamuna & canal irrigation" },
+  "Delhi":             { mm: "~650", zone: "Low", color: "#fde68a", note: "Urban heat island; receives less rain than Haryana" },
+  "Uttarakhand":       { mm: "1500–2500", zone: "Heavy", color: "#60a5fa", note: "Himalayan foothills; heavy orographic rainfall" },
+  "Uttar Pradesh":     { mm: "750–1500", zone: "Moderate–Heavy", color: "#bfdbfe", note: "Increases eastward; Gangetic plains wetter" },
+  "Rajasthan":         { mm: "100–400", zone: "Desert–Low", color: "#d97706", note: "Thar Desert <150mm; eastern Rajasthan ~600mm" },
+  "Gujarat":           { mm: "500–1500", zone: "Low–Moderate", color: "#fde68a", note: "Kutch desert < 300mm; south Gujarat ~1500mm" },
+  "Madhya Pradesh":    { mm: "1000–1500", zone: "Moderate", color: "#bfdbfe", note: "Central India; moderate southwest monsoon" },
+  "Bihar":             { mm: "1000–1500", zone: "Heavy", color: "#60a5fa", note: "Gangetic plain; heavy NE monsoon rains" },
+  "Jharkhand":         { mm: "1200–1500", zone: "Heavy", color: "#60a5fa", note: "Chota Nagpur plateau; dense forest catchment" },
+  "West Bengal":       { mm: "1500–3000", zone: "Very Heavy", color: "#2563eb", note: "Bay of Bengal moisture; Darjeeling ~3000mm" },
+  "Odisha":            { mm: "1500–2000", zone: "Heavy", color: "#60a5fa", note: "Cyclone-prone; east coast very wet" },
+  "Chhattisgarh":      { mm: "1000–1750", zone: "Moderate–Heavy", color: "#93c5fd", note: "Central plateau; moderate monsoon" },
+  "Assam":             { mm: "2500–4000", zone: "Extreme", color: "#1e3a8a", note: "Bay of Bengal monsoon funneled into Brahmaputra valley" },
+  "Meghalaya":         { mm: "11000–12000", zone: "EXTREME ★ WETTEST", color: "#0f172a", note: "Mawsynram (11,872mm) & Cherrapunji (11,610mm) — world's wettest places" },
+  "Arunachal Pradesh": { mm: "2000–5000", zone: "Extreme", color: "#1e3a8a", note: "Eastern Himalayas; Pasighat ~3000mm" },
+  "Sikkim":            { mm: "2000–3500", zone: "Very Heavy", color: "#2563eb", note: "Eastern Himalayan foothills" },
+  "Nagaland":          { mm: "2000–3000", zone: "Very Heavy", color: "#2563eb", note: "NE India; heavy southwest monsoon" },
+  "Manipur":           { mm: "1500–2500", zone: "Heavy–Very Heavy", color: "#3b82f6", note: "Hill ranges cause orographic rainfall" },
+  "Mizoram":           { mm: "2500–3500", zone: "Very Heavy", color: "#2563eb", note: "Receives heavy southwest monsoon" },
+  "Tripura":           { mm: "2000–2500", zone: "Very Heavy", color: "#3b82f6", note: "Bay of Bengal influence" },
+  "Maharashtra":       { mm: "600–5000", zone: "Varied", color: "#3b82f6", note: "Western Ghats ~5000mm; Vidarbha ~600mm. Huge variation." },
+  "Telangana":         { mm: "700–1200", zone: "Moderate", color: "#bfdbfe", note: "Interior Deccan plateau; semi-arid in parts" },
+  "Andhra Pradesh":    { mm: "800–2000", zone: "Moderate–Heavy", color: "#93c5fd", note: "East coast heavier due to NE monsoon" },
+  "Karnataka":         { mm: "600–7000", zone: "Varied (Very Heavy W.Ghats)", color: "#2563eb", note: "Agumbe ~7000mm ('Cherrapunji of South'); east <600mm" },
+  "Goa":               { mm: "2500–3500", zone: "Very Heavy", color: "#1d4ed8", note: "Windward side of Western Ghats; lush monsoon" },
+  "Kerala":            { mm: "2500–4000", zone: "Very Heavy ★", color: "#1d4ed8", note: "SW monsoon hits Kerala first (June 1st). 2nd highest avg state rainfall." },
+  "Tamil Nadu":        { mm: "900–2000", zone: "Moderate–Heavy", color: "#bfdbfe", note: "Unique: gets rain Oct–Dec from NE monsoon, opposite of rest of India" },
+  "Puducherry":        { mm: "1200–1500", zone: "Moderate–Heavy", color: "#93c5fd", note: "Coastal; NE monsoon dominant" },
+  "Chandigarh":        { mm: "~900", zone: "Low–Moderate", color: "#fde68a", note: "Capital territory; semi-arid foothills" },
+  "Uttaranchal":       { mm: "1500–2500", zone: "Heavy", color: "#60a5fa", note: "Same as Uttarakhand" },
+  "Lakshadweep":       { mm: "1600–1800", zone: "Heavy", color: "#3b82f6", note: "Island territory; ocean-influenced" },
+  "Andaman and Nicobar": { mm: "3000–4000", zone: "Very Heavy", color: "#1d4ed8", note: "Bay of Bengal islands; heavy tropical rainfall" },
+};
+
+// ── MAP INIT FLAGS ──
+let punjabMapInit = false;
+let indiaMapInit = false;
+let punjabMap, indiaMap;
+
+// ── TAB SWITCH ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+
+  document.querySelectorAll('.map-view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${tab}`).classList.add('active');
+
+  if (tab === 'punjab' && !punjabMapInit) { initPunjabMap(); punjabMapInit = true; }
+  if (tab === 'india'  && !indiaMapInit)  { initIndiaMap();  indiaMapInit  = true; }
+
+  // fix Leaflet size after show
+  setTimeout(() => {
+    if (tab === 'punjab' && punjabMap) punjabMap.invalidateSize();
+    if (tab === 'india'  && indiaMap)  indiaMap.invalidateSize();
+  }, 50);
+}
+
+// ── PUNJAB MAP ──
+function initPunjabMap() {
+  punjabMap = L.map('map-punjab', {
+    center: [31.1, 75.3],
+    zoom: 8,
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  // Clean minimal tiles (CartoDB Positron)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 14
+  }).addTo(punjabMap);
+
+  // Fetch Punjab districts GeoJSON from public API
+  fetch('https://raw.githubusercontent.com/datameet/maps/master/Districts/punjab.geojson')
+    .then(r => r.json())
+    .then(data => {
+      addPunjabDistricts(data);
+      document.getElementById('load-punjab').classList.add('hidden');
+    })
+    .catch(() => {
+      // Fallback: use Nominatim boundary query approach via overpass
+      fetchPunjabOverpass();
     });
 
-    document.addEventListener('mousemove', (e) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 50;
-      const y = (e.clientY / window.innerHeight - 0.5) * 50;
-      document.documentElement.style.setProperty('--parallax-x', `${x}px`);
-      document.documentElement.style.setProperty('--parallax-y', `${y}px`);
+  // Add rivers
+  addPunjabRivers();
+}
+
+function addPunjabDistricts(geojson) {
+  L.geoJSON(geojson, {
+    style: feature => {
+      const name = feature.properties.NAME_2 || feature.properties.district || feature.properties.DISTRICT || feature.properties.name || '';
+      const matchKey = Object.keys(districtData).find(k => name.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(name.toLowerCase()));
+      const d = matchKey ? districtData[matchKey] : null;
+      const region = d ? d.region : "Malwa";
+      const colors = regionColors[region] || regionColors["Malwa"];
+      return {
+        fillColor: colors.fill,
+        color: colors.border,
+        weight: 1.8,
+        opacity: 1,
+        fillOpacity: 1
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const rawName = feature.properties.NAME_2 || feature.properties.district || feature.properties.DISTRICT || feature.properties.name || 'District';
+      const matchKey = Object.keys(districtData).find(k =>
+        rawName.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(rawName.toLowerCase())
+      ) || rawName;
+      const d = districtData[matchKey] || {};
+
+      // Label on map
+      const center = layer.getBounds().getCenter();
+      L.marker(center, {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="
+            font-family:'DM Sans',sans-serif;
+            font-size:10px;font-weight:600;
+            color:#111827;
+            text-shadow:0 0 4px white,0 0 4px white,0 0 4px white;
+            white-space:nowrap;
+            pointer-events:none;
+            transform:translate(-50%,-50%);
+          ">${matchKey}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
+        })
+      }).addTo(punjabMap);
+
+      // Hover
+      layer.on('mouseover', function(e) {
+        this.setStyle({ weight: 2.5, fillOpacity: 0.85 });
+        layer.bindTooltip(`<strong>${matchKey}</strong>${d.pop ? '<br>Pop: ' + d.pop : ''}`, { sticky: true }).openTooltip();
+        updateHoverBox('punjab', matchKey, d);
+      });
+      layer.on('mouseout', function() {
+        this.setStyle({ weight: 1.8, fillOpacity: 1 });
+      });
+
+      // Click popup
+      layer.on('click', function(e) {
+        const html = `<div class="popup-inner">
+          <div class="popup-name">${matchKey}</div>
+          ${d.pop    ? `<div class="popup-row"><span>Population</span><span>${d.pop}${d.rank === 1 ? ' 🏆' : ''}</span></div>` : ''}
+          ${d.region ? `<div class="popup-row"><span>Region</span><span>${d.region}</span></div>` : ''}
+          ${d.area   ? `<div class="popup-row"><span>Area</span><span>${d.area}</span></div>` : ''}
+          ${d.density? `<div class="popup-row"><span>Density</span><span>${d.density}</span></div>` : ''}
+        </div>`;
+        L.popup({ closeButton: true, autoClose: true }).setLatLng(e.latlng).setContent(html).openOn(punjabMap);
+      });
+    }
+  }).addTo(punjabMap);
+}
+
+function fetchPunjabOverpass() {
+  // Fallback: load from alternative public CDN
+  fetch('https://raw.githubusercontent.com/HindustanTimesLabs/shapefiles/master/state/punjab/punjab_district.geojson')
+    .then(r => r.json())
+    .then(data => {
+      addPunjabDistricts(data);
+      document.getElementById('load-punjab').classList.add('hidden');
+    })
+    .catch(() => {
+      // Last fallback: try another source
+      fetch('https://raw.githubusercontent.com/geohacker/india/master/district/india_district.geojson')
+        .then(r => r.json())
+        .then(data => {
+          // Filter Punjab districts only
+          const punjabOnly = {
+            type: "FeatureCollection",
+            features: data.features.filter(f =>
+              (f.properties.ST_NM || '').toLowerCase() === 'punjab' ||
+              (f.properties.state || '').toLowerCase() === 'punjab'
+            )
+          };
+          addPunjabDistricts(punjabOnly);
+          document.getElementById('load-punjab').classList.add('hidden');
+        })
+        .catch(() => {
+          document.getElementById('load-punjab').innerHTML = '<div style="text-align:center;color:#6b7280;font-family:DM Mono,monospace;font-size:11px;letter-spacing:1px">Network restricted.<br>Open this file in a browser<br>with internet access.</div>';
+          document.getElementById('load-punjab').classList.remove('hidden');
+        });
     });
+}
 
-    VanillaTilt.init(document.querySelectorAll(".card"), { max: 5, speed: 400, glare: true, "max-glare": 0.3 });
+function addPunjabRivers() {
+  // Sutlej
+  const sutlej = [
+    [31.45, 76.55], [31.20, 76.20], [30.95, 75.85], [30.80, 75.50],
+    [30.65, 75.10], [30.55, 74.65], [30.40, 74.20], [30.30, 73.90],
+  ];
+  L.polyline(sutlej, { color: '#1d4ed8', weight: 3.5, opacity: 0.8, smoothFactor: 1.5 })
+    .bindTooltip('Sutlej River', { sticky: true }).addTo(punjabMap);
 
-  </script>
+  // Beas
+  const beas = [
+    [32.10, 76.90], [31.80, 76.65], [31.55, 76.30], [31.35, 75.95],
+    [31.15, 75.60], [30.90, 75.30], [30.75, 74.98],
+  ];
+  L.polyline(beas, { color: '#3b82f6', weight: 3, opacity: 0.8, smoothFactor: 1.5 })
+    .bindTooltip('Beas River', { sticky: true }).addTo(punjabMap);
+
+  // Ravi
+  const ravi = [
+    [32.55, 75.70], [32.30, 75.30], [32.05, 74.95], [31.80, 74.65],
+    [31.55, 74.40], [31.30, 74.20],
+  ];
+  L.polyline(ravi, { color: '#60a5fa', weight: 2.5, opacity: 0.8, smoothFactor: 1.5 })
+    .bindTooltip('Ravi River', { sticky: true }).addTo(punjabMap);
+
+  // River labels
+  L.marker([30.55, 74.65], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#1d4ed8;font-weight:700;letter-spacing:1px;white-space:nowrap;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:3px;">SUTLEJ</div>`,
+      iconSize: [0,0], iconAnchor: [0,0]
+    })
+  }).addTo(punjabMap);
+
+  L.marker([31.15, 75.60], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#3b82f6;font-weight:700;letter-spacing:1px;white-space:nowrap;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:3px;">BEAS</div>`,
+      iconSize: [0,0], iconAnchor: [0,0]
+    })
+  }).addTo(punjabMap);
+
+  L.marker([31.80, 74.65], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#60a5fa;font-weight:700;letter-spacing:1px;white-space:nowrap;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:3px;">RAVI</div>`,
+      iconSize: [0,0], iconAnchor: [0,0]
+    })
+  }).addTo(punjabMap);
+}
+
+// ── INDIA MAP ──
+function initIndiaMap() {
+  indiaMap = L.map('map-india', {
+    center: [22.5, 82.5],
+    zoom: 5,
+    zoomControl: true,
+    scrollWheelZoom: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 12
+  }).addTo(indiaMap);
+
+  // Try multiple sources for India states GeoJSON
+  fetch('https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson')
+    .then(r => r.json())
+    .then(data => {
+      addIndiaStates(data);
+      document.getElementById('load-india').classList.add('hidden');
+    })
+    .catch(() => {
+      fetch('https://raw.githubusercontent.com/Subhash9325/GeoJson-Data-of-Indian-States/master/Indian_States')
+        .then(r => r.json())
+        .then(data => {
+          addIndiaStates(data);
+          document.getElementById('load-india').classList.add('hidden');
+        })
+        .catch(() => {
+          document.getElementById('load-india').innerHTML = '<div style="text-align:center;color:#6b7280;font-family:DM Mono,monospace;font-size:11px;letter-spacing:1px;padding:20px">Network restricted.<br>Open this file in a browser<br>with internet access.</div>';
+        });
+    });
+}
+
+function addIndiaStates(geojson) {
+  L.geoJSON(geojson, {
+    style: feature => {
+      const name = feature.properties.NAME_1 || feature.properties.ST_NM || feature.properties.name || feature.properties.state || '';
+      const matchKey = Object.keys(rainfallData).find(k =>
+        name.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(name.toLowerCase())
+      );
+      const d = rainfallData[matchKey] || { color: '#e5e7eb' };
+      const isPunjab = name.toLowerCase().includes('punjab');
+      return {
+        fillColor: d.color,
+        color: isPunjab ? '#16a34a' : '#6b7280',
+        weight: isPunjab ? 2.5 : 1,
+        opacity: 0.9,
+        fillOpacity: 0.75
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const rawName = feature.properties.NAME_1 || feature.properties.ST_NM || feature.properties.name || feature.properties.state || 'State';
+      const matchKey = Object.keys(rainfallData).find(k =>
+        rawName.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(rawName.toLowerCase())
+      ) || rawName;
+      const d = rainfallData[matchKey] || {};
+
+      // State label on map
+      try {
+        const center = layer.getBounds().getCenter();
+        L.marker(center, {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="
+              font-family:'DM Sans',sans-serif;
+              font-size:9px;font-weight:600;
+              color:#111827;
+              text-shadow:0 0 3px white,0 0 3px white,0 0 3px white;
+              white-space:nowrap;
+              pointer-events:none;
+              transform:translate(-50%,-50%);
+              text-align:center;
+            ">${matchKey}</div>`,
+            iconSize: [0, 0],
+            iconAnchor: [0, 0]
+          })
+        }).addTo(indiaMap);
+      } catch(e) {}
+
+      layer.on('mouseover', function(e) {
+        this.setStyle({ weight: 2.5, fillOpacity: 0.9 });
+        layer.bindTooltip(
+          `<strong>${matchKey}</strong>${d.zone ? '<br>Zone: ' + d.zone : ''}${d.mm ? '<br>' + d.mm + ' mm/yr' : ''}`,
+          { sticky: true }
+        ).openTooltip();
+        updateHoverBox('india', matchKey, d);
+      });
+      layer.on('mouseout', function() {
+        const isPunjab = matchKey.toLowerCase().includes('punjab');
+        this.setStyle({ weight: isPunjab ? 2.5 : 1, fillOpacity: 0.75 });
+      });
+
+      layer.on('click', function(e) {
+        const html = `<div class="popup-inner">
+          <div class="popup-name">${matchKey}</div>
+          ${d.zone ? `<div class="popup-row"><span>Rainfall Zone</span><span>${d.zone}</span></div>` : ''}
+          ${d.mm   ? `<div class="popup-row"><span>Annual Rainfall</span><span>${d.mm} mm</span></div>` : ''}
+          ${d.note ? `<div class="popup-row" style="flex-direction:column;gap:2px"><span style="color:#9ca3af">Note</span><span style="font-size:11px;color:#374151;font-family:'DM Sans',sans-serif">${d.note}</span></div>` : ''}
+        </div>`;
+        L.popup({ closeButton: true, autoClose: true, maxWidth: 260 })
+          .setLatLng(e.latlng).setContent(html).openOn(indiaMap);
+      });
+    }
+  }).addTo(indiaMap);
+
+  // Special markers
+  // Mawsynram
+  L.circleMarker([25.29, 91.58], { radius: 10, fillColor: '#0f172a', color: 'white', weight: 2, fillOpacity: 1 })
+    .bindTooltip('<strong>Mawsynram</strong><br>11,872 mm/yr<br>Wettest place on Earth ☂', { permanent: false, sticky: true })
+    .addTo(indiaMap);
+  L.marker([25.29, 91.58], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="font-family:'DM Mono',monospace;font-size:8px;color:#0f172a;font-weight:700;white-space:nowrap;background:rgba(255,255,255,0.95);padding:3px 6px;border-radius:3px;border:1px solid #0f172a;margin-top:14px;margin-left:5px">☂ Mawsynram<br>11,872 mm/yr</div>`,
+      iconSize: [0,0], iconAnchor: [0,0]
+    })
+  }).addTo(indiaMap);
+
+  // Thar Desert label
+  L.marker([27.0, 70.5], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="font-family:'DM Mono',monospace;font-size:9px;color:#92400e;font-weight:700;text-align:center;white-space:nowrap;background:rgba(255,255,255,0.7);padding:3px 6px;border-radius:3px;">🏜 THAR DESERT<br>&lt;150 mm/yr</div>`,
+      iconSize: [0,0], iconAnchor: [0,0]
+    })
+  }).addTo(indiaMap);
+}
+
+// ── HOVER BOX UPDATE ──
+function updateHoverBox(map, name, d) {
+  const box = document.getElementById(`hover-${map}`);
+  if (map === 'punjab') {
+    box.innerHTML = `
+      <div class="hover-box-title">${name} ${d.rank === 1 ? '🏆' : ''}</div>
+      <div class="hover-box-detail">
+        ${d.pop    ? `<strong>Population:</strong> ${d.pop}<br>` : ''}
+        ${d.region ? `<strong>Region:</strong> ${d.region}<br>` : ''}
+        ${d.area   ? `<strong>Area:</strong> ${d.area}` : ''}
+      </div>`;
+  } else {
+    box.innerHTML = `
+      <div class="hover-box-title">${name}</div>
+      <div class="hover-box-detail">
+        ${d.zone ? `<strong>Zone:</strong> ${d.zone}<br>` : ''}
+        ${d.mm   ? `<strong>Rainfall:</strong> ${d.mm} mm/yr<br>` : ''}
+        ${d.note ? `<span style="font-size:12px;color:#9ca3af">${d.note}</span>` : ''}
+      </div>`;
+  }
+}
+
+// ── INIT PUNJAB ON LOAD ──
+window.addEventListener('load', () => {
+  initPunjabMap();
+  punjabMapInit = true;
+});
+</script>
 </body>
-  </html>
+</html>
+
